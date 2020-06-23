@@ -86,6 +86,8 @@ public class WritableConsts {
     public static final byte COMPUTE_PARAMETERS = 115;
     public static final byte SPLIT = 120;
     public static final byte COMPUTE_SPLIT = 121;
+    public static final byte KV_SPLIT = 122;
+    public static final byte SEARCH_INDEX_SPLIT = 123;
     public static final byte REQUIRED_COLUMNS = 126;
 
     // public static final byte x = 114;

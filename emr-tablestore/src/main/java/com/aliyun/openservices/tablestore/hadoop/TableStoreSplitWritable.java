@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,6 @@
 
 package com.aliyun.openservices.tablestore.hadoop;
 
-import com.alicloud.openservices.tablestore.ecosystem.Filter;
 import com.alicloud.openservices.tablestore.ecosystem.TablestoreSplit;
 import com.alicloud.openservices.tablestore.model.Split;
 import org.apache.hadoop.io.Writable;
@@ -43,7 +42,11 @@ public class TableStoreSplitWritable implements Writable {
         out.writeUTF(split.getType().name());
         out.writeUTF(split.getSplitName());
         out.writeUTF(split.getTableName());
-        new ComputeSplitWritable(split.getKvSplit()).write(out);
+        if (split.getKvSplit() != null) {
+            new ComputeSplitWritable(split.getKvSplit()).write(out);
+        } else {
+            new ComputeSplitWritable(split.getSessionId(), split.getSplitId()).write(out);
+        }
         new TableStoreFilterWritable(split.getFilter(), split.getRequiredColumns()).write(out);
     }
 
@@ -66,9 +69,11 @@ public class TableStoreSplitWritable implements Writable {
         TablestoreSplit.SplitType splitType = TablestoreSplit.SplitType.valueOf(in.readUTF());
         String splitName = in.readUTF();
         String tableName = in.readUTF();
-        Split kvSplit = ComputeSplitWritable.read(in).getSplit();
+        ComputeSplitWritable splitWritable = ComputeSplitWritable.read(in);
+        Split kvSplit = splitWritable.getSplit();
         TableStoreFilterWritable fw = TableStoreFilterWritable.read(in);
-        TablestoreSplit rtSplit = new TablestoreSplit(splitType, fw.getFilter(), fw.getRequiredColumns());
+        TablestoreSplit rtSplit = new TablestoreSplit(splitType, fw.getFilter(), fw.getRequiredColumns(),
+                splitWritable.getSessionId(), splitWritable.getSplitId());
         rtSplit.setSplitName(splitName);
         rtSplit.setTableName(tableName);
         rtSplit.setKvSplit(kvSplit);

@@ -173,16 +173,24 @@ public class TableStoreInputFormat extends InputFormat<PrimaryKeyWritable, RowWr
 
         ComputeParams cp = ComputeParams.deserialize(conf.get(COMPUTE_PARAMS));
         ComputeParameters.ComputeMode computeMode = ComputeParameters.ComputeMode.valueOf(cp.getComputeMode());
-        ComputeParameters computeParams = new ComputeParameters(cp.getMaxSplitsCount(), cp.getSplitSizeInMbs(), computeMode);
+        ComputeParameters computeParams;
+        LOG.info("Compute mode: {}, max splits: {}, split size: {}MB, seachIndexName: {}",
+                cp.getComputeMode(), cp.getMaxSplitsCount(), cp.getSplitSizeInMBs(), cp.getSearchIndexName());
+        if (computeMode == ComputeParameters.ComputeMode.Search && !cp.getSearchIndexName().isEmpty()) {
+            LOG.info("Generate Search compute parameters");
+            computeParams = new ComputeParameters(cp.getSearchIndexName());
+        } else {
+            computeParams = new ComputeParameters(cp.getMaxSplitsCount(), cp.getSplitSizeInMBs(), computeMode);
+        }
         ITablestoreSplitManager splitManager = new DefaultTablestoreSplitManager((SyncClient) syncClient);
         List<ITablestoreSplit> splits = splitManager.generateTablestoreSplits(
                 (SyncClient) syncClient, filter, conf.get(TABLE_NAME), computeParams, requiredColumns);
 
         List<InputSplit> inputSplits = new ArrayList<InputSplit>();
         for (ITablestoreSplit split : splits) {
-            inputSplits.add(new TableStoreInputSplit((TablestoreSplit)split));
+            inputSplits.add(new TableStoreInputSplit((TablestoreSplit) split));
         }
-        LOG.info("generate {} splits", inputSplits.size());
+        LOG.info("Generate {} splits", inputSplits.size());
         return inputSplits;
     }
 }

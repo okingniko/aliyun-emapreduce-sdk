@@ -57,6 +57,7 @@ class TableStoreRelation(
   val computeMode: String = parameters.getOrElse("compute.mode", "KV")
   val maxSplitsCount: Int = parameters.getOrElse("max.split.count", "1000").toInt
   val splitSizeInMbs: Long = parameters.getOrElse("split.size.mbs", "100").toLong
+  val searchIndexName: String = parameters.getOrElse("search.index.name", "")
 
   override def schema: StructType =
     userSpecifiedSchema.getOrElse(TableStoreCatalog(parameters).schema)
@@ -64,8 +65,13 @@ class TableStoreRelation(
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val hadoopConf = new Configuration()
     hadoopConf.set(TableStoreInputFormat.TABLE_NAME, tbName)
-    val computeParams = new ComputeParams(maxSplitsCount, splitSizeInMbs, computeMode)
-    hadoopConf.set(TableStoreInputFormat.COMPUTE_PARAMS, computeParams.serialize)
+    if (!searchIndexName.isEmpty) {
+      val computeParams = new ComputeParams(searchIndexName)
+      hadoopConf.set(TableStoreInputFormat.COMPUTE_PARAMS, computeParams.serialize)
+    } else {
+      val computeParams = new ComputeParams(maxSplitsCount, splitSizeInMbs, computeMode)
+      hadoopConf.set(TableStoreInputFormat.COMPUTE_PARAMS, computeParams.serialize)
+    }
     val otsFilter = TableStoreFilter.buildFilters(filters, this)
     val otsRequiredColumns = requiredColumns.toList.asJava
     hadoopConf.set(TableStoreInputFormat.FILTER,
@@ -215,12 +221,12 @@ class TableStoreRelation(
     new SyncClient(endpoint, accessKeyId, accessKeySecret, instanceName)
   }
 
-  private def extractValue(row: TSRow, filedName: String): Any = {
-    val isPrimaryKey = row.getPrimaryKey.contains(filedName)
-    val isPropertyKey = row.contains(filedName)
+  private def extractValue(row: TSRow, fieldName: String): Any = {
+    val isPrimaryKey = row.getPrimaryKey.contains(fieldName)
+    val isPropertyKey = row.contains(fieldName)
 
     if (isPrimaryKey) {
-      val pkColumn = row.getPrimaryKey.getPrimaryKeyColumn(filedName)
+      val pkColumn = row.getPrimaryKey.getPrimaryKeyColumn(fieldName)
       pkColumn.getValue.getType match {
         case PrimaryKeyType.INTEGER =>
           schema(pkColumn.getName).dataType match {
@@ -250,7 +256,7 @@ class TableStoreRelation(
             s"key: ${pkColumn.getValue.getType}")
       }
     } else if (isPropertyKey) {
-      val col = row.getLatestColumn(filedName)
+      val col = row.getLatestColumn(fieldName)
       col.getValue.getType match {
         case ColumnType.INTEGER =>
           val value = col.getValue.asLong()
@@ -283,7 +289,7 @@ class TableStoreRelation(
           throw new SerDeException(s"unknown data type of primary key: ${col.getValue.getType}")
       }
     } else {
-      throw new SerDeException(s"unknown filed name: $filedName")
+      logWarning(s"unknown field name: $fieldName");
     }
   }
 }
