@@ -32,13 +32,15 @@ public class ComputeSplitWritable implements Writable {
     // SearchIndex Split
     private byte[] sessionId;
     private int splitId;
+    private int maxParallel;
 
     public ComputeSplitWritable() {
     }
 
-    public ComputeSplitWritable(byte[] sessionId, int splitId) {
+    public ComputeSplitWritable(byte[] sessionId, int splitId, int maxParallel) {
         this.sessionId = sessionId;
         this.splitId = splitId;
+        this.maxParallel = maxParallel;
     }
 
     public ComputeSplitWritable(Split split) {
@@ -67,6 +69,7 @@ public class ComputeSplitWritable implements Writable {
         out.writeInt(sessionId.length);
         out.write(sessionId);
         out.writeInt(splitId);
+        out.writeInt(maxParallel);
     }
 
     public static ComputeSplitWritable read(DataInput in) throws IOException {
@@ -89,6 +92,7 @@ public class ComputeSplitWritable implements Writable {
             sessionId = new byte[len];
             in.readFully(sessionId);
             splitId = in.readInt();
+            maxParallel = in.readInt();
         } else {
             throw new IOException("broken input stream");
         }
@@ -111,5 +115,9 @@ public class ComputeSplitWritable implements Writable {
 
     public int getSplitId() {
         return splitId;
+    }
+
+    public int getMaxParallel() {
+        return maxParallel;
     }
 }
