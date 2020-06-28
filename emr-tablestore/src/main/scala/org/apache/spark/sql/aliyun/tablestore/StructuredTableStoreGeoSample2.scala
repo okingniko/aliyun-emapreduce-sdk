@@ -5,7 +5,7 @@ import java.util.UUID
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-object StructuredTableStoreAggSample extends Logging {
+object StructuredTableStoreGeoSample2 extends Logging {
   def main(args: Array[String]): Unit = {
     if (args.length < 7) {
       System.err.println(
@@ -44,14 +44,21 @@ object StructuredTableStoreAggSample extends Logging {
       .option("maxOffsetsPerChannel", maxOffsetsPerChannel) // default 10000
       .option(
         "catalog",
-        """{"columns": {"pk1": {"type": "long"} , "pk2": {"type": "string"}, "geo": {"type": "string"}
+        """{"columns": {"pk1": {"type": "string"} , "val_long1": {"type": "long"}, "val_geo": {"type": "string"}
           |}}""".stripMargin
       )
-      .option("search.index.name", "geo_test_index")
+      .option("search.index.name", "geo_table_index")
       .load()
       .createTempView("search_view")
 
-    val counts = spark.sql("""SELECT pk1, pk2 FROM search_view WHERE geo = '{"centerPoint":"5,9", "distanceInMeter": 1000000}' """)
-    counts.show()
+    val geoDistanceQuery = spark.sql("""SELECT * FROM search_view WHERE val_geo = '{"centerPoint":"6,9", "distanceInMeter": 10000}' LIMIT 100""")
+//    val geoDistanceQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE pk1 = '1420wurpoljjkhjkkigeca99544225' LIMIT 100""")
+    geoDistanceQuery.show()
+
+//    val geoBoundingBoxQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"topLeft":"8,0", "bottomRight": "0,10"}' """)
+//    geoBoundingBoxQuery.show()
+
+//    val geoPolygonQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"points":["5,0", "5,1", "6,1", "6,10"]}' """)
+//    geoPolygonQuery.show()
   }
 }

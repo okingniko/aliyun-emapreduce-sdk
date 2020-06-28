@@ -25,6 +25,8 @@ import org.apache.hadoop.io.Writable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TableStoreSplitWritable implements Writable {
     private TablestoreSplit split;
@@ -48,6 +50,15 @@ public class TableStoreSplitWritable implements Writable {
             new ComputeSplitWritable(split.getSessionId(), split.getSplitId()).write(out);
         }
         new TableStoreFilterWritable(split.getFilter(), split.getRequiredColumns()).write(out);
+        List<String> geoColumnNames = split.getGeoColumnNames();
+        if (geoColumnNames == null) {
+            out.writeInt(0);
+        } else {
+            out.writeInt(geoColumnNames.size());
+            for (String columnName : geoColumnNames) {
+                out.writeUTF(columnName);
+            }
+        }
     }
 
     public static TableStoreSplitWritable read(DataInput in) throws IOException {
@@ -72,8 +83,13 @@ public class TableStoreSplitWritable implements Writable {
         ComputeSplitWritable splitWritable = ComputeSplitWritable.read(in);
         Split kvSplit = splitWritable.getSplit();
         TableStoreFilterWritable fw = TableStoreFilterWritable.read(in);
+        int geoColumnSize = in.readInt();
+        List<String> geoColumnNames = new ArrayList<>(geoColumnSize);
+        for (int i = 0; i < geoColumnSize; i++) {
+            geoColumnNames.add(in.readUTF());
+        }
         TablestoreSplit rtSplit = new TablestoreSplit(splitType, fw.getFilter(), fw.getRequiredColumns(),
-                splitWritable.getSessionId(), splitWritable.getSplitId());
+                splitWritable.getSessionId(), splitWritable.getSplitId(), geoColumnNames);
         rtSplit.setSplitName(splitName);
         rtSplit.setTableName(tableName);
         rtSplit.setKvSplit(kvSplit);

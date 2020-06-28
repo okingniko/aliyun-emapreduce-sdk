@@ -292,4 +292,7 @@ class TableStoreRelation(
       logWarning(s"unknown field name: $fieldName");
     }
   }
+
+  // TODO: get unhandled filters when buildFilters
+  override def unhandledFilters(filters: Array[Filter]): Array[Filter] = Array()
 }
