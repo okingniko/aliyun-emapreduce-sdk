@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -95,12 +95,29 @@ public class TableStoreFilterWritable implements Writable {
                 case START_WITH:
                     out.write(WritableConsts.FILTER_START_WITH);
                     break;
+                case IN:
+                    out.write(WritableConsts.FILTER_IN);
+                    break;
+                case IS_NULL:
+                    out.write(WritableConsts.FILTER_IS_NULL);
+                    break;
+//                case IS_NOT_NULL:
+//                    out.write(WritableConsts.FILTER_IS_NOT_NULL);
+//                    break;
                 default:
                     throw new AssertionError(
                             "unknown operator: " + filter.getCompareOperator().toString());
             }
             out.writeUTF(filter.getColumnName());
-            new ColumnValueWritable(filter.getColumnValue()).write(out);
+            if (filter.getColumnValue() != null) {
+                new ColumnValueWritable(filter.getColumnValue()).write(out);
+            }
+            if (filter.getColumnValuesForInOperator() != null) {
+                out.writeInt(filter.getColumnValuesForInOperator().size());
+                for (ColumnValue columnValue : filter.getColumnValuesForInOperator()) {
+                    new ColumnValueWritable(columnValue).write(out);
+                }
+            }
         }
     }
 
@@ -147,12 +164,31 @@ public class TableStoreFilterWritable implements Writable {
                 co = Filter.CompareOperator.LESS_EQUAL;
             } else if (opTag == WritableConsts.FILTER_START_WITH) {
                 co = Filter.CompareOperator.START_WITH;
+            } else if (opTag == WritableConsts.FILTER_IN) {
+                co = Filter.CompareOperator.IN;
+//            } else if (opTag == WritableConsts.FILTER_IS_NOT_NULL) {
+//                co = Filter.CompareOperator.IS_NOT_NULL;
+            } else if (opTag == WritableConsts.FILTER_IS_NULL) {
+                co = Filter.CompareOperator.IS_NULL;
             } else {
                 throw new IOException("broken input stream");
             }
             String name = in.readUTF();
-            ColumnValue value = ColumnValueWritable.read(in).getColumnValue();
-            return new Filter(co, name, value);
+//            if (opTag == WritableConsts.FILTER_IS_NOT_NULL || opTag == WritableConsts.FILTER_IS_NULL) {
+            if (opTag == WritableConsts.FILTER_IS_NULL) {
+                return new Filter(co, name);
+            } else if (opTag == WritableConsts.FILTER_IN) {
+                int size = in.readInt();
+                List<ColumnValue> values = new ArrayList<>();
+                for (int i = 0; i < size; i++) {
+                    ColumnValue value = ColumnValueWritable.read(in).getColumnValue();
+                    values.add(value);
+                }
+                return new Filter(co, name, values);
+            } else {
+                ColumnValue value = ColumnValueWritable.read(in).getColumnValue();
+                return new Filter(co, name, value);
+            }
         } else if (tag == WritableConsts.FILTER_COMPOSITED) {
             byte opTag = in.readByte();
             Filter.LogicOperator lo;

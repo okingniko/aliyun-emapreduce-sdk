@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.aliyun.tablestore
 
+import scala.collection.JavaConverters._
+
 import java.{util => ju}
 
 import com.alicloud.openservices.tablestore.ecosystem.{Filter => OTSFilter}
@@ -73,6 +75,12 @@ object TableStoreFilter extends Logging {
         convertToOtsFilter(CompareOperator.GREATER_THAN, attribute, value, schema)
       case StringStartsWith(attribute, value) =>
         convertToOtsFilter(CompareOperator.START_WITH, attribute, value, schema)
+      case In(attribute, values) =>
+        convertToOtsFilter(CompareOperator.IN, attribute, values, schema)
+//      case IsNotNull(attribute) =>
+//        convertToOtsFilter(CompareOperator.IS_NOT_NULL, attribute);
+      case IsNull(attribute) =>
+        convertToOtsFilter(CompareOperator.IS_NULL, attribute);
       case _ =>
         OTSFilter.emptyFilter
     }
@@ -92,6 +100,20 @@ object TableStoreFilter extends Logging {
                          value: Any, schema: StructType): OTSFilter = {
     val dataType = schema(attribute).dataType
     new OTSFilter(co, attribute, convertToColumnValue(value, dataType))
+  }
+
+  // for "IS_NULL" "IS_NOT_NULL"
+  def convertToOtsFilter(co: CompareOperator, attribute: String): OTSFilter = {
+    new OTSFilter(co, attribute)
+  }
+
+  // for "IN"
+  def convertToOtsFilter(co: CompareOperator, attribute: String,
+                         values: Array[Any], schema: StructType): OTSFilter = {
+    val dataType = schema(attribute).dataType
+    val columnValueArray: Array[ColumnValue] = values.map(x => convertToColumnValue(x, dataType));
+    val list: java.util.List[ColumnValue] = columnValueArray.toList.asJava
+    new OTSFilter(co, attribute, list)
   }
 
   def convertToColumnValue(value: Any, dataType: DataType): ColumnValue = {
