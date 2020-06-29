@@ -178,7 +178,7 @@ public class TableStoreInputFormat extends InputFormat<PrimaryKeyWritable, RowWr
                 cp.getComputeMode(), cp.getMaxSplitsCount(), cp.getSplitSizeInMBs(), cp.getSearchIndexName());
         if (computeMode == ComputeParameters.ComputeMode.Search && !cp.getSearchIndexName().isEmpty()) {
             LOG.info("Generate Search compute parameters");
-            computeParams = new ComputeParameters(cp.getSearchIndexName());
+            computeParams = new ComputeParameters(cp.getSearchIndexName(), cp.getMaxSplitsCount());
         } else {
             computeParams = new ComputeParameters(cp.getMaxSplitsCount(), cp.getSplitSizeInMBs(), computeMode);
         }

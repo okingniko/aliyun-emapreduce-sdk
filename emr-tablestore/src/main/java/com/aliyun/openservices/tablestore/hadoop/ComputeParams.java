@@ -48,6 +48,12 @@ public class ComputeParams implements Writable {
         this.searchIndexName = searchIndexName;
     }
 
+    public ComputeParams(String searchIndexName, int maxSplitsCount) {
+        this.computeMode = COMPUTE_MODE_SEARCH;
+        this.searchIndexName = searchIndexName;
+        this.maxSplitsCount = maxSplitsCount;
+    }
+
     @Override
     public void write(DataOutput out) throws IOException {
         out.write(WritableConsts.COMPUTE_PARAMETERS);

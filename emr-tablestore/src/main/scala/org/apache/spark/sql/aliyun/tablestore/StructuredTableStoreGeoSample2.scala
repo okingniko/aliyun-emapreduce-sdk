@@ -49,6 +49,7 @@ object StructuredTableStoreGeoSample2 extends Logging {
       //          |}}""".stripMargin
       //      )
       .option("search.index.name", "geo_table_index")
+      .option("max.split.count", 16)
       .load()
       .createTempView("search_view")
 

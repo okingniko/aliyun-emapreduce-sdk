@@ -66,7 +66,7 @@ class TableStoreRelation(
     val hadoopConf = new Configuration()
     hadoopConf.set(TableStoreInputFormat.TABLE_NAME, tbName)
     if (!searchIndexName.isEmpty) {
-      val computeParams = new ComputeParams(searchIndexName)
+      val computeParams = new ComputeParams(searchIndexName, maxSplitsCount)
       hadoopConf.set(TableStoreInputFormat.COMPUTE_PARAMS, computeParams.serialize)
     } else {
       val computeParams = new ComputeParams(maxSplitsCount, splitSizeInMbs, computeMode)

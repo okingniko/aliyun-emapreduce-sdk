@@ -110,21 +110,21 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-core_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-<!--                <exclusions>-->
-<!--                    <exclusion>-->
-<!--                        <groupId>org.apache.hadoop</groupId>-->
-<!--                        <artifactId>*</artifactId>-->
-<!--                    </exclusion>-->
-<!--                    <exclusion>-->
-<!--                        <groupId>com.fasterxml.jackson.core</groupId>-->
-<!--                        <artifactId>jackson-databind</artifactId>-->
-<!--                    </exclusion>-->
-<!--                    <exclusion>-->
-<!--                        <groupId>com.fasterxml.jackson.module</groupId>-->
-<!--                        <artifactId>jackson-module-scala_2.11</artifactId>-->
-<!--                    </exclusion>-->
-<!--                </exclusions>-->
-            <!--<scope>provided</scope>-->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.module</groupId>
+                        <artifactId>jackson-module-scala_2.11</artifactId>
+                    </exclusion>
+                </exclusions>
+            <scope>provided</scope>
             </dependency>
 
             <dependency>
@@ -145,7 +145,7 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
@@ -168,14 +168,14 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-streaming_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-mllib_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <!-- Explicit listing of transitive deps that are shaded. Otherwise, odd compiler crashes. -->
@@ -183,31 +183,31 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
                 <version>${eclipse.jetty}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-plus</artifactId>
                 <version>${eclipse.jetty}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
                 <version>${eclipse.jetty}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
                 <version>${eclipse.jetty}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
                 <version>${eclipse.jetty}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
             <!-- End of shaded deps. -->
 
@@ -332,7 +332,7 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-mapreduce-client-core</artifactId>
                 <version>${hadoop.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>jdk.tools</groupId>
@@ -345,7 +345,7 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${hadoop.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.code.gson</groupId>
@@ -358,21 +358,21 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
                 <version>${hadoop.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-auth</artifactId>
                 <version>${hadoop.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-annotations</artifactId>
                 <version>${hadoop.version}</version>
-                <!--<scope>provided</scope>-->
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
