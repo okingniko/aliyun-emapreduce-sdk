@@ -52,14 +52,16 @@ object StructuredTableStoreGeoSample2 extends Logging {
       .load()
       .createTempView("search_view")
 
-    val geoDistanceQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE val_geo = '{"centerPoint":"6,9", "distanceInMeter": 10000}' LIMIT 100""")
+//    val geoDistanceQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE val_geo = '{"centerPoint":"6,9", "distanceInMeter": 10000}' LIMIT 100""")
     //    val geoDistanceQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE pk1 = '1420wurpoljjkhjkkigeca99544225' LIMIT 100""")
-    geoDistanceQuery.show()
+//    geoDistanceQuery.show()
 
     //    val geoBoundingBoxQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"topLeft":"8,0", "bottomRight": "0,10"}' """)
     //    geoBoundingBoxQuery.show()
 
     //    val geoPolygonQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"points":["5,0", "5,1", "6,1", "6,10"]}' """)
     //    geoPolygonQuery.show()
+    val count = spark.sql("""SELECT COUNT(*) FROM search_view""")
+    count.show();
   }
 }

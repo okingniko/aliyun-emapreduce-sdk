@@ -294,5 +294,11 @@ class TableStoreRelation(
   }
 
   // TODO: get unhandled filters when buildFilters
-  override def unhandledFilters(filters: Array[Filter]): Array[Filter] = Array()
+  override def unhandledFilters(filters: Array[Filter]): Array[Filter] = {
+    if (searchIndexName.isEmpty) {
+      filters
+    } else {
+      Array()
+    }
+  }
 }
