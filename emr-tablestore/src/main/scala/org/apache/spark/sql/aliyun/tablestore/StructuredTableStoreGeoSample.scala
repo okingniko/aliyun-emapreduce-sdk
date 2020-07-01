@@ -51,7 +51,7 @@ object StructuredTableStoreGeoSample extends Logging {
       .load()
       .createTempView("search_view")
 
-    val geoDistanceQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"centerPoint":"6,9", "distanceInMeter": 1}' """)
+    val geoDistanceQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"centerPoint":"6.530045901643962,9.05358919674954", "distanceInMeter": 3000.0}' """)
     println(geoDistanceQuery.toString())
     geoDistanceQuery.show()
 

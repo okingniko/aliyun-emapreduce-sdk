@@ -34,6 +34,7 @@ object StructuredTableStoreAggSample extends Logging {
 
     spark.sparkContext.setLogLevel("INFO")
     spark.read
+      .schema("pk0 INTEGER, pk1 INTEGER, c STRING")
       .format("tablestore")
       .option("instance.name", instanceName)
       .option("table.name", tableName)
@@ -42,16 +43,12 @@ object StructuredTableStoreAggSample extends Logging {
       .option("access.key.id", accessKeyId)
       .option("access.key.secret", accessKeySecret)
       .option("maxOffsetsPerChannel", maxOffsetsPerChannel) // default 10000
-      .option(
-        "catalog",
-        """{"columns": {"pk1": {"type": "long"} , "pk2": {"type": "string"}, "geo": {"type": "string"}
-          |}}""".stripMargin
-      )
-      .option("search.index.name", "geo_test_index")
+//      .option("search.index.name", "geo_test_index")
       .load()
       .createTempView("search_view")
 
-    val counts = spark.sql("""SELECT pk1, pk2 FROM search_view WHERE geo = '{"centerPoint":"5,9", "distanceInMeter": 1000000}' """)
+//    val counts = spark.sql("""SELECT pk1, pk2 FROM search_view WHERE geo = '{"centerPoint":"5,9", "distanceInMeter": 1000000}' """)
+    val counts = spark.sql("""SELECT * FROM search_view WHERE pk0 = 1 LIMIT 10""")
     counts.show()
   }
 }

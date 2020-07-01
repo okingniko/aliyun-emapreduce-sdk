@@ -290,6 +290,7 @@ class TableStoreRelation(
       }
     } else {
       logWarning(s"unknown field name: $fieldName");
+      null
     }
   }
 
