@@ -39,8 +39,8 @@ import org.apache.spark.util.Utils
 
 
 class TableStoreRelation(
-    parameters: Map[String, String],
-    userSpecifiedSchema: Option[StructType])(@transient val sqlContext: SQLContext)
+                          parameters: Map[String, String],
+                          userSpecifiedSchema: Option[StructType])(@transient val sqlContext: SQLContext)
   extends BaseRelation
     with PrunedFilteredScan
     with InsertableRelation
@@ -88,7 +88,7 @@ class TableStoreRelation(
       classOf[RowWritable])
 
     val rdd = rawRdd.mapPartitions(it =>
-      it.map {case (_, rw) =>
+      it.map { case (_, rw) =>
         val values = requiredColumns.map(fieldName => extractValue(rw.getRow, fieldName))
         Row.fromSeq(values)
       }
@@ -289,7 +289,8 @@ class TableStoreRelation(
           throw new SerDeException(s"unknown data type of primary key: ${col.getValue.getType}")
       }
     } else {
-      logWarning(s"unknown field name: $fieldName");
+      logWarning(s"unknown field name: $fieldName")
+      null
     }
   }
 

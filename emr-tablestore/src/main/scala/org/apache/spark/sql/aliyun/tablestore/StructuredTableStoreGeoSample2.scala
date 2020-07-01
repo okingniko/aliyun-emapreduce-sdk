@@ -34,7 +34,7 @@ object StructuredTableStoreGeoSample2 extends Logging {
 
     spark.sparkContext.setLogLevel("INFO")
     spark.read
-      .schema("pk1 STRING, val_long1 STRING, val_geo STRING")
+      .schema("pk1 STRING, val_long1 LONG, val_geo STRING")
       .format("tablestore")
       .option("instance.name", instanceName)
       .option("table.name", tableName)
