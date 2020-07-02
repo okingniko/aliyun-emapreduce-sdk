@@ -34,6 +34,7 @@ object StructuredTableStoreGeoSample extends Logging {
 
     spark.sparkContext.setLogLevel("INFO")
     spark.read
+      .schema("pk1 STRING, val_long1 LONG, val_geo STRING")
       .format("tablestore")
       .option("instance.name", instanceName)
       .option("table.name", tableName)
@@ -42,23 +43,18 @@ object StructuredTableStoreGeoSample extends Logging {
       .option("access.key.id", accessKeyId)
       .option("access.key.secret", accessKeySecret)
       .option("maxOffsetsPerChannel", maxOffsetsPerChannel) // default 10000
-      .option(
-        "catalog",
-        """{"columns": {"pk1": {"type": "long"} , "pk2": {"type": "string"}, "geo": {"type": "string"}
-          |}}""".stripMargin
-      )
-      .option("search.index.name", "geo_test_index")
+      .option("search.index.name", "geo_table_index")
+      .option("max.split.count", 16)
       .load()
       .createTempView("search_view")
 
-    val geoDistanceQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"centerPoint":"6.530045901643962,9.05358919674954", "distanceInMeter": 3000.0}' """)
-    println(geoDistanceQuery.toString())
+    val geoDistanceQuery = spark.sql("""SELECT pk1, val_long1, val_geo FROM search_view WHERE val_geo = '{"centerPoint":"6.530045901643962,9.05358919674954", "distanceInMeter": 3000.0}' AND (val_long1 >= 1 AND val_long1 < 10000) AND (val_long1 > 5000 AND val_long1 < 20000) LIMIT 100""")
+//    val geoDistanceQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE val_geo = '{"centerPoint":"6.530045901643962,9.05358919674954", "distanceInMeter": 3000.0}' AND val_long1 >= 1 AND val_long1 < 20000 LIMIT 100""")
     geoDistanceQuery.show()
-
-    val geoBoundingBoxQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"topLeft":"8,0", "bottomRight": "0,10"}' """)
-    geoBoundingBoxQuery.show()
-
-    val geoPolygonQuery = spark.sql("""SELECT * FROM search_view WHERE geo = '{"points":["5,0", "5,1", "6,1", "6,10"]}' """)
-    geoPolygonQuery.show()
+    //    val geoBoundingBoxQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE val_geo = '{"topLeft":"6.257664116603074,9.1595116589601", "bottomRight": "6.153593333442616,9.25968497923747"}' """)
+    //    geoBoundingBoxQuery.show()
+    //
+    //    val geoPolygonQuery = spark.sql("""SELECT COUNT(*) FROM search_view WHERE val_geo = '{"points":["6.530045901643962,9.05358919674954", "6.257664116603074,9.1595116589601", "6.160393397574926,9.256517839929597", "6.16043846779313,9.257192872563525"]}' """)
+    //    geoPolygonQuery.show()
   }
 }

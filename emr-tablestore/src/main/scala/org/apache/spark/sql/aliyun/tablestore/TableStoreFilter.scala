@@ -81,7 +81,13 @@ object TableStoreFilter extends Logging {
   }
 
   def and(left: OTSFilter, right: OTSFilter): OTSFilter = {
-    new OTSFilter(LogicOperator.AND, ju.Arrays.asList(left, right))
+    if (left.getCompareOperator == CompareOperator.EMPTY_FILTER) {
+      right
+    } else if (right.getCompareOperator == CompareOperator.EMPTY_FILTER) {
+      left
+    } else {
+      new OTSFilter(LogicOperator.AND, ju.Arrays.asList(left, right))
+    }
   }
 
   def or(left: OTSFilter, right: OTSFilter): OTSFilter = {
