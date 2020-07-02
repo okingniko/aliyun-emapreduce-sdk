@@ -77,8 +77,8 @@ object TableStoreFilter extends Logging {
         convertToOtsFilter(CompareOperator.START_WITH, attribute, value, schema)
       case In(attribute, values) =>
         convertToOtsFilter(CompareOperator.IN, attribute, values, schema)
-//      case IsNotNull(attribute) =>
-//        convertToOtsFilter(CompareOperator.IS_NOT_NULL, attribute);
+      //      case IsNotNull(attribute) =>
+      //        convertToOtsFilter(CompareOperator.IS_NOT_NULL, attribute);
       case IsNull(attribute) =>
         convertToOtsFilter(CompareOperator.IS_NULL, attribute);
       case _ =>
