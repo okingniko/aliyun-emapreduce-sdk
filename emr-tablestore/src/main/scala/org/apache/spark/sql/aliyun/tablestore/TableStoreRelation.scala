@@ -19,23 +19,23 @@ package org.apache.spark.sql.aliyun.tablestore
 
 import java.util
 
-import scala.collection.JavaConverters._
-
-import com.alicloud.openservices.tablestore.SyncClient
-import com.alicloud.openservices.tablestore.model._
-import com.alicloud.openservices.tablestore.model.{Row => TSRow}
+import com.alicloud.openservices.tablestore.ecosystem.{TablestoreSplit, Filter => OTSFilter}
+import com.alicloud.openservices.tablestore.model.{Row => TSRow, _}
+import com.alicloud.openservices.tablestore.{ClientConfiguration, SyncClient}
 import com.aliyun.openservices.tablestore.hadoop._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.serde2.SerDeException
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.Job
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
-import org.apache.spark.sql.sources._
+import org.apache.spark.sql.sources.{Filter, _}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.util.Utils
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 
 class TableStoreRelation(
@@ -58,12 +58,13 @@ class TableStoreRelation(
   val maxSplitsCount: Int = parameters.getOrElse("max.split.count", "1000").toInt
   val splitSizeInMbs: Long = parameters.getOrElse("split.size.mbs", "100").toLong
   val searchIndexName: String = parameters.getOrElse("search.index.name", "")
+  var hadoopConf: Configuration = null;
 
   override def schema: StructType =
     userSpecifiedSchema.getOrElse(TableStoreCatalog(parameters).schema)
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
-    val hadoopConf = new Configuration()
+    hadoopConf = new Configuration()
     hadoopConf.set(TableStoreInputFormat.TABLE_NAME, tbName)
     if (!searchIndexName.isEmpty) {
       val computeParams = new ComputeParams(searchIndexName, maxSplitsCount)
@@ -294,12 +295,67 @@ class TableStoreRelation(
     }
   }
 
-  // TODO: get unhandled filters when buildFilters
+  // TODO 有geo列并且sparksql全是and的时候,geo列和大多数filter肯定会被handled,只有一些数据量很大filter,交由spark过滤
+  //有geo列并且sparksql里面有or的时候,算子必须全部推到ots-sdk,并且unhandleFilters必须返回空数组(默认所有filter都转化成了query,
+  // 并交由ots-sdk执行,不给spark过滤geo列的权利)
+
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = {
+    val configuration = new ClientConfiguration()
+    var otsClient = new SyncClient(endpoint, accessKeyId, accessKeySecret, instanceName, configuration)
     if (searchIndexName.isEmpty) {
       filters
+      //Or的情况 返回空数组
     } else {
-      Array()
+      var unhandledSparkFilters = new ArrayBuffer[Filter]()
+      var otsFilterPushed = TableStoreFilter.buildFilters(filters, this)
+      TablestoreSplit.beforeGetUnhandledOtsFilter(otsClient, otsFilterPushed, tbName, searchIndexName);
+      var filterOtsUnhandled: OTSFilter = TablestoreSplit.getUnhandledOtsFilter(otsClient, otsFilterPushed, tbName, searchIndexName)
+      if (filterOtsUnhandled == null) {
+        return unhandledSparkFilters.toArray
+      } else if (!filterOtsUnhandled.isNested) {
+        val filterSpark = otsfilterToSparkFilterArray(filterOtsUnhandled)
+        //      val filterSpark = otsfilterToSparkFilterArray(null)
+        unhandledSparkFilters += filterSpark
+      } else {
+        //因为全是and下的filter所以不需要递归
+        val subFilters = filterOtsUnhandled.getSubFilters().asScala
+        for (filterOtsUnhandled2 <- subFilters) {
+          //          var filterOtsUnhandled2 = subFilters.get(i)
+          var filterSpark = otsfilterToSparkFilterArray(filterOtsUnhandled2)
+          unhandledSparkFilters += filterSpark
+        }
+      }
+      return unhandledSparkFilters.toArray
     }
+    new Array[Filter](0)
   }
+
+  private def otsfilterToSparkFilterArray(filterOts: OTSFilter): Filter = {
+    //        return new GreaterThanOrEqual("val_long1", 3697900)
+    if (filterOts.getCompareOperator == OTSFilter.CompareOperator.EQUAL) {
+      return new EqualTo(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.IS_NULL) {
+      return new IsNotNull(filterOts.getColumnName)
+      //startWith类型
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.START_WITH) {
+      return new StringStartsWith(filterOts.getColumnName, filterOts.getColumnValue.asString())
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.GREATER_THAN) {
+      return new GreaterThan(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.GREATER_EQUAL) {
+      return new GreaterThanOrEqual(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.LESS_THAN) {
+      return new LessThan(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.LESS_EQUAL) {
+      return new LessThanOrEqual(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    }
+    null
+    //    } else if (filterOts.getCompareOperator eq OTSFilter.CompareOperator.IN) {
+    //      return new In(filterOts.getColumnName, filterOts.getColumnValuesForInOperator.toArray())
+    //    else if (filter.getCompareOperator eq Filter.CompareOperator.NOT_EQUAL) { //notEqual
+    //      return new
+    //    }
+
+    //    null
+  }
+
 }
