@@ -64,7 +64,7 @@ class TableStoreRelation(
     userSpecifiedSchema.getOrElse(TableStoreCatalog(parameters).schema)
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
-    hadoopConf = new Configuration()
+    var hadoopConf = new Configuration()
     hadoopConf.set(TableStoreInputFormat.TABLE_NAME, tbName)
     if (!searchIndexName.isEmpty) {
       val computeParams = new ComputeParams(searchIndexName, maxSplitsCount)
