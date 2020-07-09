@@ -90,7 +90,7 @@ class GetUnhandledFilterTest extends SparkFunSuite {
 
   //
   //    //and 有rangelong  无geo   不推rangelong取决于参数
-  val geoDistanceQuery = spark.sql("""  SELECT * FROM search_view where val_long1 >= 27494400  and val_long1 in(37691900,55747100) and val_long1 != 37691900 LIMIT 100   """.stripMargin)
+//  val geoDistanceQuery = spark.sql("""  SELECT * FROM search_view where val_long1 >= 27494400  and val_long1 in(37691900,55747100) and val_long1 != 37691900 LIMIT 100   """.stripMargin)
 
   //
   //or rangelong                                              必须全下推
@@ -99,7 +99,7 @@ class GetUnhandledFilterTest extends SparkFunSuite {
   //or geo                                                    报错
   //    val geoDistanceQuery = spark.sql("""  SELECT * FROM search_view where  val_geo = '{"centerPoint":"3,0", "distanceInMeter": 10000}'  or  val_long1 > 3697900  LIMIT 100   """.stripMargin)
 
-  geoDistanceQuery.show(false)
+//  geoDistanceQuery.show(false)
 
   //            val geoBoundingBoxQuery = spark.sql("""SELECT * FROM search_view WHERE val_geo = '{"topLeft":"3,0", "bottomRight": "0,3"}' """)
   //    geoBoundingBoxQuery.show(false)

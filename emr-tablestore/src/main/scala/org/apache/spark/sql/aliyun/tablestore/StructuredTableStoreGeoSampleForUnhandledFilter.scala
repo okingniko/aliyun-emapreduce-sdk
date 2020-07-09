@@ -7,11 +7,11 @@ import org.apache.spark.sql.SparkSession
 
 object StructuredTableStoreGeoSampleForUnhandledFilter extends Logging {
   def main(args: Array[String]): Unit = {
-    if (args.length < 7) {
+    if (args.length < 9) {
       System.err.println(
         "Usage: StructuredTableStoreWordCount <ots-instanceName>" +
           "<ots-tableName> <ots-tunnelId> <access-key-id> <access-key-secret> <ots-endpoint>" +
-          "<max-offsets-per-channel> [<checkpoint-location>]"
+          "<max-offsets-per-channel> [<checkpoint-location>] <push-down-rang-long> <push-down-rang-string>"
       )
     }
 
@@ -23,11 +23,13 @@ object StructuredTableStoreGeoSampleForUnhandledFilter extends Logging {
     accessKeySecret,
     endpoint,
     maxOffsetsPerChannel,
+    pushdownRangeLong,
+    pushdownRangeString,
     _*
     ) = args
 
     val checkpointLocation =
-      if (args.length > 7) args(7) else "/tmp/temporary-" + UUID.randomUUID.toString
+      if (args.length > 9) args(9) else "/tmp/temporary-" + UUID.randomUUID.toString
 
     val spark =
       SparkSession.builder.appName("TableStoreWordCount").master("local[16]").getOrCreate()
@@ -44,6 +46,8 @@ object StructuredTableStoreGeoSampleForUnhandledFilter extends Logging {
       .option("access.key.secret", accessKeySecret)
       .option("maxOffsetsPerChannel", maxOffsetsPerChannel) // default 10000
       .option("search.index.name", "wenxian_searchIndex_spark_test_index2")
+      .option("push.down.range.long", pushdownRangeLong)
+      .option("push.down.range.string", pushdownRangeString)
       .load()
       .createTempView("search_view")
 
@@ -64,6 +68,7 @@ object StructuredTableStoreGeoSampleForUnhandledFilter extends Logging {
     //
     //    //and 有rangelong  无geo   不推rangelong取决于参数
     val geoDistanceQuery = spark.sql("""  SELECT * FROM search_view where val_long1 >= 27494400  and val_long1 in(37691900,55747100) and val_long1 != 37691900 LIMIT 100   """.stripMargin)
+      .hint("pushdownRangeLong", pushdownRangeLong.toBoolean) .hint("pushdownRangeString", pushdownRangeString.toBoolean)
 
     //
     //or rangelong                                              必须全下推

@@ -20,6 +20,7 @@ package com.aliyun.openservices.tablestore.hadoop;
 
 import com.alicloud.openservices.tablestore.SyncClient;
 import com.alicloud.openservices.tablestore.core.utils.Preconditions;
+import com.alicloud.openservices.tablestore.ecosystem.FilterPushdownConfig;
 import com.alicloud.openservices.tablestore.ecosystem.TablestoreSplit;
 import com.alicloud.openservices.tablestore.model.PrimaryKey;
 import com.alicloud.openservices.tablestore.model.Row;
@@ -115,6 +116,6 @@ public class TableStoreRecordReader extends RecordReader<PrimaryKeyWritable, Row
 
         TablestoreSplit tsSplit = ((TableStoreInputSplit) split).getSplit();
         tsSplit.initial(ots);
-        results = tsSplit.getRowIterator(ots);
+        results = tsSplit.getRowIterator(ots, cred.filterPushdownConfig);
     }
 }

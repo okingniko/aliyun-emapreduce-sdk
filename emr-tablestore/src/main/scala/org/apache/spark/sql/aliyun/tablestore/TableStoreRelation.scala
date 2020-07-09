@@ -19,7 +19,7 @@ package org.apache.spark.sql.aliyun.tablestore
 
 import java.util
 
-import com.alicloud.openservices.tablestore.ecosystem.{TablestoreSplit, Filter => OTSFilter}
+import com.alicloud.openservices.tablestore.ecosystem.{FilterPushdownConfig, TablestoreSplit, Filter => OTSFilter}
 import com.alicloud.openservices.tablestore.model.{Row => TSRow, _}
 import com.alicloud.openservices.tablestore.{ClientConfiguration, SyncClient}
 import com.aliyun.openservices.tablestore.hadoop._
@@ -36,6 +36,8 @@ import org.apache.spark.util.Utils
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.mutable
 
 
 class TableStoreRelation(
@@ -58,6 +60,9 @@ class TableStoreRelation(
   val maxSplitsCount: Int = parameters.getOrElse("max.split.count", "1000").toInt
   val splitSizeInMbs: Long = parameters.getOrElse("split.size.mbs", "100").toLong
   val searchIndexName: String = parameters.getOrElse("search.index.name", "")
+  val pushdownRangeLong: Boolean = parameters.getOrElse("push.down.range.long", "true").toBoolean
+  val pushdownRangeString: Boolean = parameters.getOrElse("push.down.range.string", "true").toBoolean
+  val pushdownConfig = new FilterPushdownConfig(pushdownRangeLong, pushdownRangeString)
   var hadoopConf: Configuration = null;
 
   override def schema: StructType =
@@ -78,7 +83,7 @@ class TableStoreRelation(
     hadoopConf.set(TableStoreInputFormat.FILTER,
       new TableStoreFilterWritable(otsFilter, otsRequiredColumns).serialize)
 
-    TableStore.setCredential(hadoopConf, new Credential(accessKeyId, accessKeySecret, null))
+    TableStore.setCredential(hadoopConf, new Credential(accessKeyId, accessKeySecret, null, pushdownConfig))
     val ep = new Endpoint(endpoint, instanceName)
     TableStore.setEndpoint(hadoopConf, ep)
     TableStoreInputFormat.addCriteria(hadoopConf, fetchCriteria())
@@ -94,7 +99,6 @@ class TableStoreRelation(
         Row.fromSeq(values)
       }
     )
-
     rdd
   }
 
@@ -111,7 +115,7 @@ class TableStoreRelation(
     }
     jobConfig.set(TableStoreOutputFormat.OUTPUT_TABLE, tbName)
     jobConfig.set(TableStore.CREDENTIAL,
-      new Credential(accessKeyId, accessKeySecret, null).serialize())
+      new Credential(accessKeyId, accessKeySecret, null, pushdownConfig).serialize())
     jobConfig.set(TableStore.ENDPOINT, new Endpoint(endpoint, instanceName).serialize())
     jobConfig.set(TableStoreOutputFormat.MAX_UPDATE_BATCH_SIZE, batchUpdateSize)
 
@@ -309,7 +313,8 @@ class TableStoreRelation(
       var unhandledSparkFilters = new ArrayBuffer[Filter]()
       var otsFilterPushed = TableStoreFilter.buildFilters(filters, this)
       TablestoreSplit.beforeGetUnhandledOtsFilter(otsClient, otsFilterPushed, tbName, searchIndexName);
-      var filterOtsUnhandled: OTSFilter = TablestoreSplit.getUnhandledOtsFilter(otsClient, otsFilterPushed, tbName, searchIndexName)
+
+      var filterOtsUnhandled: OTSFilter = TablestoreSplit.getUnhandledOtsFilter(otsClient, otsFilterPushed, tbName, searchIndexName, pushdownConfig)
       if (filterOtsUnhandled == null) {
         return unhandledSparkFilters.toArray
       } else if (!filterOtsUnhandled.isNested) {
@@ -347,15 +352,19 @@ class TableStoreRelation(
       return new LessThan(filterOts.getColumnName, filterOts.getColumnValue.getValue)
     } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.LESS_EQUAL) {
       return new LessThanOrEqual(filterOts.getColumnName, filterOts.getColumnValue.getValue)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.IN) {
+
+      val value = filterOts.getColumnValuesForInOperator
+      val buffer = new ArrayBuffer[Any]()
+      for (columnValue <- value) {
+        buffer += columnValue.getValue
+      }
+      val array = buffer.toArray
+      return new In(filterOts.getColumnName, array)
+    } else if (filterOts.getCompareOperator == OTSFilter.CompareOperator.NOT_EQUAL) {
+      return new Not(new EqualTo(filterOts.getColumnName, filterOts.getColumnValue.getValue))
     }
     null
-    //    } else if (filterOts.getCompareOperator eq OTSFilter.CompareOperator.IN) {
-    //      return new In(filterOts.getColumnName, filterOts.getColumnValuesForInOperator.toArray())
-    //    else if (filter.getCompareOperator eq Filter.CompareOperator.NOT_EQUAL) { //notEqual
-    //      return new
-    //    }
-
-    //    null
   }
 
 }
